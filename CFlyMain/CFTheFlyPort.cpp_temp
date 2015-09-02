@@ -1,0 +1,623 @@
+#include "CFTheFlyPort.h"
+
+#include "CFlyCommon.h"
+
+using namespace CFly;
+
+
+HANDLE	brushColor;
+HWND    fySysWND = 0;
+BOOL    fyBeExclusive = FALSE;
+HINSTANCE    g_fyInst = 0;
+static char const* fyClassName = "TheFly_V1";
+static int   argc = 0;
+static char* argv[32]; 
+
+
+
+typedef void (*ObjRenderFun)( OBJECTid );
+struct FyObjData
+{
+	void* userData;
+	int   curGeomIndex;
+	ObjRenderFun prevFun;
+	ObjRenderFun postFun;
+};
+
+WORLDid FyWin32CreateWorld(char *caption,     // window caption
+						   int ox, int oy,    // window position
+						   int w, int h,      // world size
+						   int cDepth,        // color depth
+						   BOOL beFullScreen, // be fullscreen ?
+						   HWND parentW, BOOL bePopUp)
+{
+	int iStyle;
+
+	if (g_fyInst == 0) 
+		return FAILED_ID;
+
+	// create the window
+
+	HWND hWnd = 0;
+	if (beFullScreen) 
+	{
+		hWnd = CreateWindow(fyClassName, caption, WS_POPUP, 0, 0, w, h, NULL, NULL, g_fyInst, NULL);
+		fyBeExclusive = TRUE;
+	}
+	else {
+		if (bePopUp) {
+			hWnd = CreateWindow(fyClassName, caption, WS_POPUP, ox, oy, w, h, NULL, NULL, g_fyInst, NULL);
+		}
+		else 
+		{
+			// create the window style for no menu windows
+			if (parentW == 0) {
+				iStyle = WS_CAPTION | WS_DLGFRAME | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_SYSMENU | WS_MAXIMIZEBOX;
+			}
+			else {
+				iStyle = WS_CHILD;
+			}
+
+			// Set windows RECT
+			RECT rect;
+			SetRect(&rect, ox, oy, ox + w, oy + h);
+			AdjustWindowRect(&rect, iStyle, FALSE);
+
+			// create window
+			hWnd = CreateWindow(fyClassName, caption, iStyle, ox, oy, 
+				(rect.right - rect.left), (rect.bottom - rect.top),
+				parentW, 0L, g_fyInst, 0L );
+		}
+	}
+
+	if (hWnd == 0) 
+		return FAILED_ID;
+
+
+	World* world = IWorldManager::getInstance().createWorld(
+		hWnd, w, h, cDepth, beFullScreen );
+
+	WORLDid id = world->getEntityID();
+
+	if (id != FAILED_ID) 
+	{
+		ShowWindow(hWnd, SW_SHOWNORMAL);
+		UpdateWindow(hWnd);
+	}
+	else
+	{
+		DestroyWindow( hWnd );
+	}
+
+	if (fySysWND == 0) {
+		fySysWND = hWnd;
+	}
+
+	return id;
+}
+
+
+
+bool FyWin32InitSystem( HINSTANCE hInst, LPSTR lpCmdLine, WNDPROC FyProc )
+{
+
+	HANDLE	brushColor = CreateSolidBrush(RGB(200, 200, 200));
+
+	// register window class for shell
+	g_fyInst = hInst;
+
+	WNDCLASSEX wc;
+	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+	wc.style          = CS_OWNDC | CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+	wc.lpfnWndProc    = FyProc;
+	wc.cbClsExtra     = 0;
+	wc.cbWndExtra     = 0;
+	wc.hInstance      = hInst;
+	wc.hIcon          = LoadIcon(NULL, MAKEINTRESOURCE(1));
+	wc.hCursor        = LoadCursor(NULL, IDC_ARROW);
+
+	wc.hbrBackground  = (HBRUSH) brushColor;
+	wc.lpszMenuName   = NULL;
+	wc.lpszClassName  = fyClassName;
+	wc.cbSize         = sizeof(WNDCLASSEX);
+	wc.hIconSm        = NULL;
+	RegisterClassEx(&wc);
+
+	// prepare arguments for main program
+	char* cmd = GetCommandLine();
+	char* exeName = strtok(cmd, " ");
+
+	argc = 1;
+	argv[0] = (char *)malloc((int) strlen(exeName)+1);
+	strcpy(argv[0], exeName);
+	char* nextOne = strtok(lpCmdLine, " ");
+	while (nextOne != NULL) {
+		argv[argc] = (char *)malloc((int) strlen(nextOne)+1);
+		strcpy(argv[argc], nextOne);
+		argc++;
+		nextOne = strtok(NULL, " ");
+	}
+
+	if ( !CFly::initSystem() )
+		return false;
+
+	return true;
+}
+
+void FyWin32EndSystem()
+{
+	for (int i = 0; i < argc; i++) {
+		free(argv[i]);
+	}
+	DeleteObject(brushColor);
+	// unregister the window class
+	UnregisterClass( fyClassName , g_fyInst );
+}
+
+
+
+template< class T >
+T  entity_cast( unsigned  id )
+{
+	return (T)EntityManger::getInstance().extractEntity( 
+		id , EntityTypeMap< UnpackPtr< T >::result_type  >::value );
+}
+
+
+VIEWPORTid FnWorld::CreateViewport( int x , int y , int w , int h )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return FAILED_ID;
+
+	Viewport* vp = world->createViewport( x , y , w , h );
+	return vp->getEntityID();
+}
+
+SCENEid FnWorld::CreateScene( int numGroup /*= 1*/ )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return FAILED_ID;
+	Scene* scene = world->createScene( numGroup );
+	return scene->getEntityID();
+}
+
+void FnWorld::SwapBuffers()
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->swapBuffers();
+}
+
+void FnWorld::StartMessageDisplay()
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+
+	world->beginMessage();
+}
+
+void FnWorld::MessageOnScreen( int x , int y , char* str , BYTE r , BYTE g, BYTE b, BYTE a /*= 255*/ )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->showMessage( x , y , str , r , g , b , a );
+}
+
+void FnWorld::FinishMessageDisplay()
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->endMessage();
+}
+
+void FnWorld::SetScenePath( char* dir )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->setDir( DIR_SCENE , dir );
+}
+
+void FnWorld::SetTexturePath( char* dir )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->setDir( DIR_TEXTURE , dir );
+}
+
+void FnWorld::SetObjectPath( char* dir )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->setDir( DIR_OBJECT , dir );
+}
+
+void FnWorld::SetCharacterPath( char* dir )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->setDir( DIR_ACTOR , dir );
+}
+
+void FnWorld::UseMessageFont( int size )
+{
+	World* world = entity_cast< World* >( Object() );
+	if ( !world )
+		return;
+	world->setupMessageFont( size );
+}
+
+WORLDid FnScene::GetWorld()
+{
+	Scene* scene = entity_cast< Scene* >( Object() );
+	if ( !scene )
+		return FAILED_ID;
+
+	return scene->getWorld()->getEntityID();
+}
+
+OBJECTid FnScene::CreateObject( OBJECTid parent /*= ROOT*/ )
+{
+	Scene* scene = entity_cast< Scene* >( Object() );
+	if ( !scene )
+		return FAILED_ID;
+
+	SceneNode* node = Scene::findSceneNode( parent );
+	Object* obj = scene->createObject( node );
+
+	FyObjData* data = new FyObjData;
+	memset( data , 0 , sizeof( FyObjData ) );
+	obj->setUserData( data );
+
+	return obj->getEntityID();
+}
+
+void FnScene::DeleteObject( OBJECTid id )
+{
+	Scene* scene = entity_cast< Scene* >( Object() );
+	if ( !scene )
+		return;
+	Object* obj = entity_cast< Object* >( id );
+	if ( !obj )
+		return;
+
+	if ( scene != obj->getScene() )
+		return;
+
+	FyObjData* data = static_cast< FyObjData*>( obj->getUserData() );
+
+	if ( data->userData )
+		free( data->userData );
+
+	delete data;
+	scene->destroyObject( obj );
+}
+
+OBJECTid FnScene::CreateCamera( OBJECTid parent /*= ROOT*/ )
+{
+	Scene* scene = entity_cast< Scene* >( Object() );
+	if ( !scene )
+		return FAILED_ID;
+
+	SceneNode* node = Scene::findSceneNode( parent );
+	Camera* camera = scene->createCamera( node );
+
+	return camera->getEntityID();
+}
+
+OBJECTid FnScene::CreateLight( OBJECTid parent /*= ROOT*/ )
+{
+	Scene* scene = entity_cast< Scene* >( Object() );
+	if ( !scene )
+		return FAILED_ID;
+
+	SceneNode* node = Scene::findSceneNode( parent );
+	Light* light = scene->createLight( node );
+
+	return light->getEntityID();
+}
+
+void FnObject::SetParent( OBJECTid parent )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return;
+
+	SceneNode* node = Scene::findSceneNode( parent );
+	obj->setParent( node );
+}
+
+OBJECTid FnObject::GetParent()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FAILED_ID;
+
+	return obj->getParent()->getEntityID();
+}
+
+int FnObject::GetChildrenNumber()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return -1;
+
+	return obj->getChildrenNum();
+}
+
+int FnObject::GetChildren( OBJECTid* idBuffer , int maxNum )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return -1;
+
+	int num = 0;
+	Object::ChildIterator childIter = obj->getChildren();
+
+	while( childIter.hasMoreElements() )
+	{
+		SceneNode* node = static_cast< SceneNode* >( childIter.getElement() );
+		idBuffer[ ++num ] = node->getEntityID();
+		if ( num >= maxNum )
+			break;
+
+		childIter.getNext();
+	}
+	return num;
+}
+
+SCENEid FnObject::GetScene()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FAILED_ID;
+
+	return obj->getScene()->getEntityID();
+}
+
+void FnObject::SetOpacity( float val )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return;
+
+	return obj->setOpacity( val );
+}
+
+float FnObject::GetOpacity()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return 0.0f;
+
+	return obj->getOpacity();
+}
+
+char const* FnObject::GetName()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return nullptr;
+
+	return obj->getName().c_str();
+}
+
+BOOL FnObject::RemoveGeometry( int id )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FALSE;
+
+	return obj->removeGeomShape( id );
+}
+
+void FnObject::AddNormalData()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return;
+
+	obj->addNormalData();
+}
+
+BOOL FnObject::Load( char const* name )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FAILED_ID;
+
+	return obj->load( name );
+}
+
+int FnObject::Lines( int type , MATERIALid mID , float* v , int nV , BOOL beUpdate )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FAILED_ID;
+
+	Material* mat = entity_cast< Material* >( mID );
+	return obj->createLines( mat , LineType( type ) , nV , v );
+}
+
+int FnObject::GetMaterials( MATERIALid* pMID )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return 0;
+
+	Object::GeomIterator iter = obj->getGeomShapes();
+	int numMat = 0;
+	while( iter.hasMoreElements() )
+	{
+		MeshBase* geom = iter.getElement();
+
+		Material* mat = geom->getMaterial();
+
+		bool save = true;
+		for( int i = 0 ; i < numMat ; ++i )
+		{
+			if ( pMID[i] == mat->getEntityID() )
+			{
+				save = false;
+				break;
+			}
+		}
+		if ( save )
+		{
+			pMID[ numMat++ ] = mat->getEntityID(); 
+		}
+
+		iter.getNext();
+	}
+	return numMat;
+}
+
+int FnObject::GetGeometryCount( int* nT, int* nV )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return 0;
+
+	Object::GeomIterator iter = obj->getGeomShapes();
+	int numMat = 0;
+
+	int numT = 0;
+	int numV = 0;
+	int numG = 0;
+	while( iter.hasMoreElements() )
+	{
+		MeshBase* geom = iter.getElement();
+
+		numT += geom->getTriangleNum();
+		numV += geom->getVertexNum();
+		++numG;
+
+		iter.getNext();
+	}
+	return numG;
+}
+
+OBJECTid FnObject::Instance( BOOL beCopy /*= FALSE*/ )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return FAILED_ID;
+
+	Object* copyObj = obj->instance( beCopy );
+	return copyObj->getEntityID();
+}
+
+void FnObject::SetName( char* name )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return;
+
+	obj->setName( name );
+}
+
+void* FnObject::InitData( int size )
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return nullptr;
+
+	FyObjData* data = ( FyObjData* )obj->getUserData();
+
+	if ( data->userData )
+		free( data->userData );
+
+	data->userData = malloc( size );
+
+	return data->userData;
+}
+
+void* FnObject::GetData()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return nullptr;
+
+	FyObjData* data = ( FyObjData* )obj->getUserData();
+	return data->userData;
+}
+
+void FnObject::XForm()
+{
+	Object* obj = entity_cast< Object* >( Object() );
+	if ( !obj )
+		return;
+
+	obj->xform();
+}
+
+void FnSceneNode::Translate( float x , float y , float z , DWORD op )
+{
+	SceneNode* node = Scene::findSceneNode( Object() );
+	if ( !node )
+		return;
+
+	node->translate( TransOp(op) , Vector3(x,y,z) );
+}
+
+void FnSceneNode::Rotate( DWORD axis , float angle , DWORD op )
+{
+	SceneNode* node = Scene::findSceneNode( Object() );
+	if ( !node )
+		return;
+
+	node->rotate( TransOp(op) , AxisEnum(axis) , Math::Deg2Rad( angle ) );
+}
+
+void FnSceneNode::Quaternion( float w , float x , float y , float z, DWORD op )
+{
+	SceneNode* node = Scene::findSceneNode( Object() );
+	if ( !node )
+		return;
+
+	node->rotate( TransOp(op) , CFly::Quaternion(x,y,z,w) );
+}
+
+void FnSceneNode::Scale( float sx , float sy , float sz , DWORD op )
+{
+	SceneNode* node = Scene::findSceneNode( Object() );
+	if ( !node )
+		return;
+
+	node->scale( TransOp(op) , Vector3(sx,sy,sz ) );
+}
+
+void FnSprite::SetRectArea( int* hotspot , int w , int h , float* color , char* tex , int nTex , BOOL beKey /*= FALSE*/, BYTE r /*= 0*/, BYTE g /*= 0*/, BYTE b /*= 0*/, DWORD filter /*= FILTER_POINT */ )
+{
+	Sprite* spr = entity_cast< Sprite* >( Object() );
+	if ( !spr )
+		return;
+
+	spr->setRectArea( hotspot , w , h  , tex , nTex ,  color , beKey ? &Color3ub(r, g, b) : nullptr , FilterMode( filter ) );
+}
+
+void FnSprite::SetRectPosition( int x , int y , int z )
+{
+	Sprite* spr = entity_cast< Sprite* >( Object() );
+	if ( !spr )
+		return;
+
+	spr->setRectPosition( Vector3( x , y , z ) );
+}
+
+void FnSprite::SetRectColor( float* color )
+{
+	Sprite* spr = entity_cast< Sprite* >( Object() );
+	if ( !spr )
+		return;
+	spr->setRectColor( ColorKey( color[0] , color[1] , color[2] , color[3] ) );
+}

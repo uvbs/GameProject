@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="ZumaCore" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Option extended_obj_names="1" />
+		<Build>
+			<Target title="Debug Win32">
+				<Option output="..\debug\libZumaCore" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="Debug Win32" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-g" />
+					<Add option="-W" />
+					<Add option="-O0" />
+					<Add option="-DDEBUG" />
+					<Add option="-D_DEBUG" />
+					<Add option="-DWIN32" />
+					<Add option="-D_WINDOWS" />
+					<Add directory="..\FMOD\include" />
+					<Add directory="e:\app\boost" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="..\FMOD\include" />
+				</ResourceCompiler>
+			</Target>
+			<Target title="Release Win32">
+				<Option output="..\release\libZumaCore" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="Release Win32" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wall" />
+					<Add option="-W" />
+					<Add option="-DNDEBUG" />
+					<Add option="-DWIN32" />
+					<Add option="-D_WINDOWS" />
+					<Add directory="..\FMOD\include" />
+					<Add directory="e:\app\boost" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="..\FMOD\include" />
+				</ResourceCompiler>
+			</Target>
+		</Build>
+		<Unit filename="AudioPlayer.cpp" />
+		<Unit filename="AudioPlayer.h" />
+		<Unit filename="ClassDiagram1.cd" />
+		<Unit filename="GameCore.h" />
+		<Unit filename="IRenderSystem.cpp" />
+		<Unit filename="IRenderSystem.h" />
+		<Unit filename="ParticleSystem.cpp" />
+		<Unit filename="ParticleSystem.h" />
+		<Unit filename="RefCountObj.h" />
+		<Unit filename="ResID.h" />
+		<Unit filename="ResManager.cpp" />
+		<Unit filename="ResManager.h" />
+		<Unit filename="SysMsg.h" />
+		<Unit filename="SysMsgHandler.h" />
+		<Unit filename="TaskBase.cpp" />
+		<Unit filename="TaskBase.h" />
+		<Unit filename="ThinkObjT.h" />
+		<Unit filename="UIBase.cpp" />
+		<Unit filename="UIBase.h" />
+		<Unit filename="Win32Platform.h" />
+		<Unit filename="XmlLoader.cpp" />
+		<Unit filename="XmlLoader.h" />
+		<Unit filename="ZBall.cpp" />
+		<Unit filename="ZBall.h" />
+		<Unit filename="ZBallConGroup.cpp" />
+		<Unit filename="ZBallConGroup.h" />
+		<Unit filename="ZDraw.cpp" />
+		<Unit filename="ZEvent.h" />
+		<Unit filename="ZEventHandler.h" />
+		<Unit filename="ZFont.cpp" />
+		<Unit filename="ZFont.h" />
+		<Unit filename="ZLevel.cpp" />
+		<Unit filename="ZLevel.h" />
+		<Unit filename="ZLevelManager.cpp" />
+		<Unit filename="ZLevelManager.h" />
+		<Unit filename="ZPath.cpp" />
+		<Unit filename="ZPath.h" />
+		<Unit filename="ZStage.cpp" />
+		<Unit filename="ZStage.h" />
+		<Unit filename="ZTask.cpp" />
+		<Unit filename="ZTask.h" />
+		<Unit filename="ZUISystem.cpp" />
+		<Unit filename="ZUISystem.h" />
+		<Unit filename="ZumaGame.cpp" />
+		<Unit filename="ZumaGame.h" />
+		<Unit filename="axCRSpline.cpp" />
+		<Unit filename="axCRSpline.h" />
+		<Unit filename="axThread.cpp" />
+		<Unit filename="axThread.h" />
+		<Unit filename="axVec2T.hpp" />
+		<Unit filename="basefwd.h" />
+		<Unit filename="debug.cpp" />
+		<Unit filename="debug.h" />
+		<Unit filename="winimage.cpp" />
+		<Unit filename="winimage.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

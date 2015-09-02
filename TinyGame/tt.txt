@@ -1,0 +1,100 @@
+"#Cancel Ready\n"
+	"<1>取消準備\n"
+	"\n"
+
+"#Connect Server\n"
+	"<1>連線至伺服器\n"
+	"\n"
+
+"#Create Server\n"
+	"<1>建立伺服器\n"
+	"\n"
+
+"#Exit\n"
+	"<1>離開\n"
+	"\n"
+
+"#Exit the Tetris Game?\n"
+	"<1>確定要離開遊戲?\n"
+	"\n"
+
+"#KeyBorad\n"
+	"<1>鍵盤\n"
+	"\n"
+
+"#New Game\n"
+	"<1>新遊戲\n"
+	"\n"
+
+"#OK\n"
+	"<1>同意\n"
+	"\n"
+
+"#Option\n"
+	"<1>選項\n"
+	"\n"
+
+"#Player\n"
+	"<1>玩家\n"
+	"\n"
+
+"#Player %s Inter Room\n"
+	"<1>玩家%s加入遊戲\n"
+	"\n"
+
+"#Ready\n"
+	"<1>準備好了\n"
+	"\n"
+
+"#Set Defult\n"
+	"<1>預設設定\n"
+	"\n"
+
+"#Show Score\n"
+	"<1>查詢紀錄\n"
+	"\n"
+
+"#Start Game\n"
+	"<1>開始遊戲\n"
+	"\n"
+
+"#View Replay\n"
+	"<1>觀賞錄像\n"
+	"\n"
+
+"#A-Star Test\n"
+	"\n"
+
+"#Back\n"
+	"\n"
+
+"#Bloxorz Test\n"
+	"\n"
+
+"#Bsp Test\n"
+	"\n"
+
+"#MultiPlayer\n"
+	"\n"
+
+"#Net Test( Client )\n"
+	"\n"
+
+"#Net Test( Server )\n"
+	"\n"
+
+"#Planet Test\n"
+	"\n"
+
+"#SAT Test\n"
+	"\n"
+
+"#SinglePlayer\n"
+	"\n"
+
+"#Tree Test\n"
+	"\n"
+
+"#Tween Test\n"
+	"\n"
+
